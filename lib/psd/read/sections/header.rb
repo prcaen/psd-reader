@@ -8,12 +8,12 @@ module Psd
         end
 
         def parse
-          signature = @stream.read(4).unpack("A4")
+          signature = BinData::String.new(read_length: 4).read(@stream)
           unless signature == Psd::SIGNATURE
             raise Psd::SignatureMismatch.new("PSD/PSB signature mismatch")
           end
 
-          version = @stream.read(2).unpack("s")
+          version = BinData::Int16be.read(@stream)
           unless version == Psd::VERSION_PSD || version == Psd::VERSION_PSB
             raise Psd::VersionMismatch.new("PSD/PSB version mismatch")
           end

@@ -1,4 +1,5 @@
 require "logger"
+require "bindata"
 require "psd/version"
 
 module Psd
@@ -15,7 +16,7 @@ module Psd
   if defined?(Rails)
     LOG = Rails.logger
   else
-    Logger.new(STDOUT)
+    LOG = Logger.new(STDOUT)
     LOG.level = Logger::DEBUG
   end
 
