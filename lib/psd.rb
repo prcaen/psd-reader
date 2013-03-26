@@ -1,5 +1,5 @@
-require "psd/version"
 require "logger"
+require "psd/version"
 
 module Psd
   #  =================
@@ -9,12 +9,15 @@ module Psd
   VERSION_PSD = 1
   VERSION_PSB = 2
 
-  DEBUG_MODE  = false
-
   #  =================
   #  =      LOGS     =
   #  =================
-  LOG = Logger.new('logs/psd.log', 'daily')
+  if defined?(Rails)
+    LOG = Rails.logger
+  else
+    Logger.new(STDOUT)
+    LOG.level = Logger::DEBUG
+  end
 
   #  =================
   #  =   EXCEPTIONS  =
@@ -27,10 +30,10 @@ module Psd
   class SignatureMismatch < Psd::Exception
   end
 
-  class VersionMismatch < Exception
+  class VersionMismatch < Psd::Exception
   end
 
-  class EndFileReached < Exception
+  class EndFileReached < Psd::Exception
   end
 end
 
