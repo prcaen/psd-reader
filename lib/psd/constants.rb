@@ -2,17 +2,16 @@ module Psd
   #  =================
   #  =   CONSTANTS   =
   #  =================
-  BITMAP       = 0
-  GRAYSCALE    = 1
-  INDEXED      = 2
-  RGB          = 3
-  CMYK         = 4
-  MULTICHANNEL = 7
-  DUOTONE      = 8
-  LAB          = 9
+  COLOR_BITMAP       = 0
+  COLOR_GRAYSCALE    = 1
+  COLOR_INDEXED      = 2
+  COLOR_RGB          = 3
+  COLOR_CMYK         = 4
+  COLOR_MULTICHANNEL = 7
+  COLOR_DUOTONE      = 8
+  COLOR_LAB          = 9
 
-  COLOR_MODE = [BITMAP, GRAYSCALE, INDEXED, RGB, CMYK, MULTICHANNEL, DUOTONE, LAB]
-
+  COLOR_MODE  = [COLOR_BITMAP, COLOR_GRAYSCALE, COLOR_INDEXED, COLOR_RGB, COLOR_CMYK, COLOR_MULTICHANNEL, COLOR_DUOTONE, COLOR_LAB]
   COLOR_MODES = {
     0 => "Bitmap",
     1 => "GrayScale",

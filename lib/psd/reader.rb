@@ -1,4 +1,5 @@
 require "psd/read/sections/header"
+require "psd/read/sections/color_mode_data"
 
 module Psd
   class Reader
@@ -14,6 +15,10 @@ module Psd
       # Header
       @header = Psd::Read::Sections::Header.new(stream)
       @header.parse
+
+      # Color mode data
+      @color_mode_data = Psd::Read::Sections::ColorModeData.new(stream, @header.color_mode)
+      @color_mode_data.parse
 
       Psd::LOG.info("#### END READ FILE: #{@filename} ####")
       Psd::LOG.info("Summary => #{self.to_s}")

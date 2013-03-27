@@ -29,6 +29,9 @@ module Psd
   class ColorModeNotSupported < Psd::Exception
   end
 
+  class LengthException < Psd::Exception
+  end
+
   class ENOENT < Errno::ENOENT
     def initialize(mess)
       super
