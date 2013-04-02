@@ -3,6 +3,7 @@ module Psd
     module Sections
       class ColorModeData
         def initialize(stream, color_mode)
+          Psd::LOG.info("### COLOR MODE DATA - pos: #{stream.pos} ###")
           @stream     = stream
           @color_mode = color_mode
         end

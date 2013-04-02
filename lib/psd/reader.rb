@@ -1,5 +1,7 @@
+require "psd/read/tools"
 require "psd/read/sections/header"
 require "psd/read/sections/color_mode_data"
+require "psd/read/sections/image_resources"
 
 module Psd
   class Reader
@@ -19,6 +21,10 @@ module Psd
       # Color mode data
       @color_mode_data = Psd::Read::Sections::ColorModeData.new(stream, @header.color_mode)
       @color_mode_data.parse
+
+      # Image resources
+      @image_resources = Psd::Read::Sections::ImageResources.new(stream, @header.color_mode)
+      @image_resources.parse
 
       Psd::LOG.info("#### END READ FILE: #{@filename} ####")
       Psd::LOG.info("Summary => #{self.to_s}")
