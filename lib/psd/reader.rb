@@ -31,7 +31,7 @@ module Psd
     end
 
     def to_s
-      "Filename: #{@filename}, channels: #{@header.channels}, width: #{@header.width}px, height: #{@header.height}px, depth: #{@header.depth}bits per channel, color mode: #{COLOR_MODES[@header.color_mode]}, created at: #{File.ctime(@file_path)}, updated at: #{File.mtime(@file_path)}, path: #{File.dirname(@file_path)}"
+      "Filename: #{@filename}, channels: #{@header.channels}, width: #{@header.width}px, height: #{@header.height}px, depth: #{@header.depth}bits per channel, color mode: #{COLOR_MODES[@header.color_mode]}, resources length: #{@image_resources.resources.length}, created at: #{File.ctime(@file_path)}, updated at: #{File.mtime(@file_path)}, path: #{File.dirname(@file_path)}"
     end
   end
 end

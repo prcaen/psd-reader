@@ -4,6 +4,9 @@ module Psd
       class ImageResource
         LENGTH_SIGNATURE = 4
         SIGNATURE = "8BIM"
+
+        attr_reader :id, :description, :data
+
         def initialize(stream, color_mode)
           @stream     = stream
           @color_mode = color_mode
@@ -15,18 +18,18 @@ module Psd
             raise Psd::SignatureMismatch.new("PSD/PSB signature mismatch")
           end
 
-          @id       = BinData::Uint16be.read(@stream)
+          @id       = BinData::Uint16be.read(@stream).value
           @name     = parse_name
-          @size     = Psd::Read::Tools.padding_2(BinData::Int32be.read(@stream))
-          @data     = parse_data
+          @size     = Psd::Read::Tools.padding_2(BinData::Int32be.read(@stream).value)
+          parse_data
 
           Psd::LOG.debug("Resource ##{@id}, #{@description}")
         end
 
         def parse_name
-          length = BinData::Uint8be.read(@stream)
+          length = BinData::Uint8be.read(@stream).value
           length = Psd::Read::Tools.padding_2(length - 1) + 1
-          BinData::String.new(read_length: length).read(@stream)
+          BinData::String.new(read_length: length).read(@stream).value
         end
 
         def parse_data
@@ -40,7 +43,7 @@ module Psd
             resource = ressources_descriptions[@id]
             @description = resource[:name]
             unless resource[:parse].nil?
-              resource[:parse].call
+              @data = resource[:parse].call
             else
               BinData::Skip.new(length: @size).read(@stream)
             end
@@ -49,17 +52,18 @@ module Psd
           end
         end
 
+        # TODO: need tests and refactor
         def ressources_descriptions
           {
           1000 => {
             name: "PS2.0 mode data",
             parse: lambda {
               {
-                channels: BinData::Uint16be.read(@stream),
-                rows: BinData::Uint16be.read(@stream),
-                cols: BinData::Uint16be.read(@stream),
-                depth: BinData::Uint16be.read(@stream),
-                mode: BinData::Uint16be.read(@stream)
+                channels: BinData::Uint16be.read(@stream).value,
+                rows: BinData::Uint16be.read(@stream).value,
+                cols: BinData::Uint16be.read(@stream).value,
+                depth: BinData::Uint16be.read(@stream).value,
+                mode: BinData::Uint16be.read(@stream).value
               }
             }
           },
@@ -80,15 +84,15 @@ module Psd
           },
           1008 => {
             name: "Caption",
-            parse: lambda { Huloa::Parsers::Psd::Tools::BinData.pascal_string(@stream) }
+            parse: lambda { { caption: Psd::Read::Types::PascalString.new.read(@stream) } }
           },
           1009 => {
             name: "Border information",
             parse: lambda {
               {
-                border_width: BinData::FloatBe.read(@stream),
+                border_width: BinData::FloatBe.read(@stream).value,
                 unit: lambda {
-                  case BinData::Uint16be.read(@stream)
+                  case BinData::Uint16be.read(@stream).value
                   when 1
                     "inches"
                   when 2
@@ -111,16 +115,16 @@ module Psd
             name: "Print flags",
             parse: lambda {
               start = @stream.tell
-              data = {
-                labels: BinData::Uint8be.read(@stream),
-                crop_marks: BinData::Uint8be.read(@stream),
-                color_bars: BinData::Uint8be.read(@stream),
-                registration_marks: BinData::Uint8be.read(@stream),
-                negative: BinData::Uint8be.read(@stream),
-                flip: BinData::Uint8be.read(@stream),
-                interpolate: BinData::Uint8be.read(@stream),
-                caption: BinData::Uint8be.read(@stream),
-                print_flags: BinData::Uint8be.read(@stream)
+              {
+                labels: BinData::Uint8be.read(@stream).value,
+                crop_marks: BinData::Uint8be.read(@stream).value,
+                color_bars: BinData::Uint8be.read(@stream).value,
+                registration_marks: BinData::Uint8be.read(@stream).value,
+                negative: BinData::Uint8be.read(@stream).value,
+                flip: BinData::Uint8be.read(@stream).value,
+                interpolate: BinData::Uint8be.read(@stream).value,
+                caption: BinData::Uint8be.read(@stream).value,
+                print_flags: BinData::Uint8be.read(@stream).value
               }
 
               @stream.seek(start + @size)
@@ -149,7 +153,7 @@ module Psd
           },
           1019 => {
             name: "B&W values for the dot range",
-            parse: lambda { BinData::Uint16be.read(@stream) }
+            parse: lambda { { b_w_values_for_the_dot_range: BinData::Uint16be.read(@stream).value } }
           },
           1021 => {
             name: "EPS options"
@@ -158,14 +162,14 @@ module Psd
             name: "Quick Mask info",
             parse: lambda {
               {
-                quick_mask_channel_id: BinData::Uint16be.read(@stream),
-                was_mask_empty: BinData::Uint8be.read(@stream)
+                quick_mask_channel_id: BinData::Uint16be.read(@stream).value,
+                was_mask_empty: BinData::Uint8be.read(@stream).value
               }
             }
           },
           1024 => {
             name: "Layer state info",
-            parse: lambda { BinData::Uint16be.read(@stream) }
+            parse: lambda { { layer_state_info: BinData::Uint16be.read(@stream).value } }
           },
           1025 => {
             name: "Working path"
@@ -178,11 +182,11 @@ module Psd
               results = []
 
               while @stream.tell < start + @size
-                info = BinData::Uint16be.read(@stream)[0]
+                info = BinData::Uint16be.read(@stream).value
                 results.push(info)
               end
 
-              results
+              { layers_group_info: results }
             }
           },
           1028 => {
@@ -202,13 +206,11 @@ module Psd
           },
           1034 => {
             name: "Copyright flag",
-            parse: lambda {}
+            parse: lambda { { copyright_flag: @stream.read(@size).unpack("C#{@size}") } }
           },
           1035 => {
             name: "URL",
-            parse: lambda {
-              @stream.read(@size)
-            }
+            parse: lambda { { url: @stream.read(@size) } }
           },
           1036 => {
             name: "Thumbnail resource"
@@ -224,24 +226,20 @@ module Psd
           },
           1040 => {
             name: "Watermark",
-            parse: lambda {
-              BinData::Uint8be.read(@stream)
-            }
+            parse: lambda { { watermark: BinData::Uint8be.read(@stream).value } }
           },
           1041 => {
             name: "ICC Untagged"
           },
           1042 => {
             name: "Effects visible",
-            parse: lambda {
-              BinData::Uint8be.read(@stream)
-            }
+            parse: lambda { { effects_visible: BinData::Uint8be.read(@stream).value } }
           },
           1043 => {
             name: "Spot Halftone",
             parse: lambda {
-              version = BinData::Uint32be.read(@stream)
-              length  = BinData::Uint32be.read(@stream)
+              version = BinData::Uint32be.read(@stream).value
+              length  = BinData::Uint32be.read(@stream).value
 
               {
                 version: version,
@@ -251,68 +249,62 @@ module Psd
           },
           1044 => {
             name: "Document specific IDs seed number",
-            parse: lambda {
-              @doc_id_seed_number = BinData::Uint32be.read(@stream)
-            }
+            parse: lambda { { document_specific_ids_seed_number: BinData::Uint32be.read(@stream).value } }
           },
           1045 => {
             name: "Unicode Alpha Names"
           },
           1046 => {
             name: "Indexed Color Table Count",
-            parse: lambda {
-              @indexed_color_table_count = BinData::Uint16be.read(@stream)
-            }
+            parse: lambda { { indexed_color_table_count: BinData::Uint16be.read(@stream).value } }
           },
           1047 => {
             name: "Transparent Index",
-            parse: lambda {
-              @transparancy_index = BinData::Uint16be.read(@stream)
-            }
+            parse: lambda { { transparancy_index: BinData::Uint16be.read(@stream).value } }
           },
           1049 => {
             name: "Global Altitude",
-            parse: lambda {
-              @global_altitude = BinData::Uint32be.read(@stream)
-            }
+            parse: lambda { { global_altitude: BinData::Uint32be.read(@stream).value } }
           },
           1050 => {
             name: "Slices"
           },
           1051 => {
             name: "Workflow URL",
-            parse: lambda {
-              @workflow_url = Huloa::Parsers::Psd::Tools::BinData.pascal_string(@stream)
-            }
+            parse: lambda { { workflow_url: Psd::Read::Types::PascalString.new.read(@stream) } }
           },
           1052 => {
             name: "Jump To XPEP",
             parse: lambda {
-              @major_version = BinData::Uint16be.read(@stream)
-              @minor_version = BinData::Uint16be.read(@stream)
-              count          = BinData::Uint32be.read(@stream)
+              major_version = BinData::Uint16be.read(@stream).value
+              minor_version = BinData::Uint16be.read(@stream).value
+              count         = BinData::Uint32be.read(@stream).value
 
-              @xpep_blocks = []
+              xpep_blocks = []
 
-              i = _i = 0
+              i = 0
 
-              while 0 <= count ? _i < count : _i > count
+              while i <= count
                 block = {
-                  size: BinData::Uint32be.read(@stream),
+                  size: BinData::Uint32be.read(@stream).value,
                   key: @stream.read(4)
                 }
 
                 if block[:key] == "jtDd"
-                  block[:dirty] = Huloa::Parsers::Psd::Tools::BinData.read_boolean(@stream)
+                  block[:dirty] = BinData::Bit1.read(@stream).value
                 else
-                  block[:mod_date] = BinData::Uint32be.read(@stream)
+                  block[:mod_date] = BinData::Uint32be.read(@stream).value
                 end
 
-                @xpep_blocks.push(block)
-                i = 0 <= count ? _i += 1 : _i -= 1
+                xpep_blocks.push(block)
+
+                i += 1
               end
 
-              @xpep_blocks
+              { major_version: major_version,
+                minor_version: minor_version,
+                xpep_blocks: xpep_blocks
+              }
             }
           },
           1053 => {
@@ -407,17 +399,24 @@ module Psd
           },
           8000 => {
             name: "Lightroom workflow",
-            parse: lambda { @lightroom_workflow = 1 }
+            parse: lambda { { lightroom_workflow: 1 } }
 
           },
           10000 => {
             name: "Print flags info",
             parse: lambda {
-              @version = BinData::Uint16be.read(@stream)
-              @center_crop_marks = BinData::Uint8be.read(@stream)
+              version = BinData::Uint16be.read(@stream).value
+              center_crop_marks = BinData::Uint8be.read(@stream).value
               BinData::Skip.new(length: 1).read(@stream)
-              @bleed_width = BinData::Uint32be.read(@stream)
-              @bleed_scale = BinData::Uint16be.read(@stream)
+              bleed_width = BinData::Uint32be.read(@stream).value
+              bleed_scale = BinData::Uint16be.read(@stream).value
+
+              {
+                version: version,
+                center_crop_marks: center_crop_marks,
+                bleed_width: bleed_width,
+                bleed_scale: bleed_scale
+              }
             }
           }
         }

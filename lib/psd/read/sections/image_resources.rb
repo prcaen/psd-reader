@@ -4,6 +4,7 @@ module Psd
   module Read
     module Sections
       class ImageResources
+        attr_reader :resources
         def initialize(stream, color_mode)
           Psd::LOG.info("### IMAGE RESOURCES - pos: #{stream.pos} ###")
           @stream     = stream
