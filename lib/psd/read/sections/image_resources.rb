@@ -13,7 +13,7 @@ module Psd
         end
 
         def parse
-          @length = n = BinData::Int32be.read(@stream)
+          @length = n = BinData::Int32be.read(@stream).value
 
           start = @stream.pos
 

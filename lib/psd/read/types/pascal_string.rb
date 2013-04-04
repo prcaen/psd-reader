@@ -3,7 +3,7 @@ module Psd
     module Types
       class PascalString < BinData::Record
         uint8  :len
-        string :data, :read_length => :len
+        string :data, read_length: :len
       end
     end
   end

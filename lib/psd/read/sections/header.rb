@@ -23,28 +23,28 @@ module Psd
         end
 
         def parse
-          signature = BinData::String.new(read_length: LENGTH_SIGNATURE).read(@stream)
+          signature = BinData::String.new(read_length: LENGTH_SIGNATURE).read(@stream).value
           unless signature == SIGNATURE
             raise Psd::SignatureMismatch.new("PSD/PSB signature mismatch")
           end
 
-          version = BinData::Uint16be.read(@stream)
+          version = BinData::Uint16be.read(@stream).value
           unless version == VERSION_PSD || version == VERSION_PSB
             raise Psd::VersionMismatch.new("PSD/PSB version mismatch")
           end
 
-          reserved = BinData::Uint48be.read(@stream)
+          reserved = BinData::Uint48be.read(@stream).value
           unless reserved == 0
             raise "Reserved header must be 0"
           end
 
-          @channels = BinData::Uint16be.read(@stream)
+          @channels = BinData::Uint16be.read(@stream).value
           if channels < 1 || channels > 56
             raise Psd::ChannelsRangeOutOfBounds.new("Channels supported is 1 to 56, excpected: #{channels}")
           end
 
-          @height = BinData::Uint32be.read(@stream)
-          @width  = BinData::Uint32be.read(@stream)
+          @height = BinData::Uint32be.read(@stream).value
+          @width  = BinData::Uint32be.read(@stream).value
 
           if version == VERSION_PSD
             if width < 1 || width > PIXELS_MAX_PSD || height < 1 || height > PIXELS_MAX_PSD
@@ -56,12 +56,12 @@ module Psd
             end
           end
 
-          @depth = BinData::Uint16be.read(@stream)
+          @depth = BinData::Uint16be.read(@stream).value
           unless SUPPORTED_DEPTH.include? @depth
             raise Psd::DepthNotSupported("Depth #{@depth} is not supported.")
           end
 
-          @color_mode = BinData::Uint16be.read(@stream)
+          @color_mode = BinData::Uint16be.read(@stream).value
           unless Psd::COLOR_MODE.include? @color_mode
             raise Psd::ColorModeNotSupported("Color mode #{@color_mode} is not supported.")
           end

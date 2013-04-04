@@ -9,7 +9,7 @@ module Psd
         end
 
         def parse
-          @length = BinData::Uint32be.read(@stream)
+          @length = BinData::Uint32be.read(@stream).value
 
           if @color_mode == Psd::COLOR_INDEXED || @color_mode == Psd::COLOR_DUOTONE
             Psd::LOG.warn("Not implemented for the moment")
