@@ -5,15 +5,20 @@ module Psd
     module Sections
       class ImageResources
         attr_reader :resources
+
         def initialize(stream, color_mode)
-          Psd::LOG.info("### IMAGE RESOURCES - pos: #{stream.pos} ###")
           @stream     = stream
           @color_mode = color_mode
           @resources  = []
+          @length     = BinData::Int32be.read(@stream).value
+          @parsed     = false
         end
 
         def parse
-          @length = n = BinData::Int32be.read(@stream).value
+          Psd::LOG.info("### IMAGE RESOURCES ###")
+          Psd::LOG.debug("Current position: #{Psd::Read::Tools.format_size(@stream.pos)}")
+
+          n = @length
 
           start = @stream.pos
 
@@ -28,6 +33,16 @@ module Psd
           end
 
           @stream.seek(start + @length)
+          @parsed = true
+        end
+
+        def skip
+          Psd::LOG.info("### IMAGE RESOURCES - Skipped ###")
+          BinData::Skip.new(length: @length).read(@stream)
+        end
+
+        def parsed?
+          @parsed
         end
       end
     end
