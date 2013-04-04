@@ -1,4 +1,5 @@
 require "psd/read/tools"
+require "psd/read/types/pascal_string"
 require "psd/read/sections/header"
 require "psd/read/sections/color_mode_data"
 require "psd/read/sections/image_resources"
@@ -9,29 +10,92 @@ module Psd
       raise Psd::ENOENT.new("#{file_path}") unless File.exist?(file_path)
 
       @file_path = file_path
-      @filename = File.basename(file_path)
+      @filename  = File.basename(file_path)
+      @parsed    = false
       Psd::LOG.info("#### READ FILE: #{@filename} ####")
 
-      stream = File.open(file_path, "rb")
+      @stream = File.open(file_path, "rb")
 
       # Header
-      @header = Psd::Read::Sections::Header.new(stream)
+      @header = Psd::Read::Sections::Header.new(@stream)
       @header.parse
+    end
+
+    def parse
+      start_parse = Time.now
+      @stream.seek(Psd::Read::Sections::Header::LENGTH_TOTAL)
 
       # Color mode data
-      @color_mode_data = Psd::Read::Sections::ColorModeData.new(stream, @header.color_mode)
-      @color_mode_data.parse
+      @color_mode_data = Psd::Read::Sections::ColorModeData.new(@stream, @header.color_mode)
+      @color_mode_data.skip
 
       # Image resources
-      @image_resources = Psd::Read::Sections::ImageResources.new(stream, @header.color_mode)
-      @image_resources.parse
+      @image_resources = Psd::Read::Sections::ImageResources.new(@stream, @header.color_mode)
+      @image_resources.skip
 
+      @parsed = true
+      end_parse = Time.now
+      Psd::LOG.debug("File parsed in: #{Psd::Read::Tools::format_time_diff(start_parse, end_parse)}")
       Psd::LOG.info("#### END READ FILE: #{@filename} ####")
       Psd::LOG.info("Summary => #{self.to_s}")
     end
 
     def to_s
-      "Filename: #{@filename}, channels: #{@header.channels}, width: #{@header.width}px, height: #{@header.height}px, depth: #{@header.depth}bits per channel, color mode: #{COLOR_MODES[@header.color_mode]}, resources length: #{@image_resources.resources.length}, created at: #{File.ctime(@file_path)}, updated at: #{File.mtime(@file_path)}, path: #{File.dirname(@file_path)}"
+      "Filename: #{@filename}, channels: #{@header.channels}, width: #{width(true)}, height: #{height(true)}, depth: #{depth(true)}, color mode: #{color_mode}, resources length: #{resources_length(true)}, size: #{Psd::Read::Tools.format_size(File.size(@file_path))}, created at: #{File.ctime(@file_path)}, updated at: #{File.mtime(@file_path)}, path: #{File.dirname(@file_path)}"
+    end
+
+    def parsed?
+      @parsed
+    end
+
+    def channels
+      @header.channels
+    end
+
+    def color_mode(humanize = true)
+      if humanize
+        COLOR_MODES[@header.color_mode]
+      else
+        @header.color_mode
+      end
+    end
+
+    def depth(humanize = false)
+      if humanize
+        "#{@header.depth}bits per channel"
+      else
+        @header.depth
+      end
+    end
+
+    def height(humanize = false)
+      if humanize
+        "#{@header.height}px"
+      else
+        @header.height
+      end
+    end
+
+    def resources
+      raise Psd::UnParsedException.new("Image resources are not parsed") unless @image_resources.parsed?
+      @image_resources.resources
+    end
+
+    def resources_length(humanize = false)
+      len = @image_resources.resources.length
+      if humanize && len == 0
+        "N/A"
+      else
+        len
+      end
+    end
+
+    def width(humanize = false)
+      if humanize
+        "#{@header.width}px"
+      else
+        @header.width
+      end
     end
   end
 end

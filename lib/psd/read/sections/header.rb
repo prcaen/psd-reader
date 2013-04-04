@@ -9,6 +9,7 @@ module Psd
 
         LENGTH_SIGNATURE = 4
         LENGTH_RESERVED  = 6
+        LENGTH_TOTAL     = 26
 
         PIXELS_MAX_PSD = 30000
         PIXELS_MAX_PSB = 300000

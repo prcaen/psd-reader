@@ -32,6 +32,9 @@ module Psd
   class LengthException < Psd::Exception
   end
 
+  class UnParsedException < Psd::Exception
+  end
+
   class ENOENT < Errno::ENOENT
     def initialize(mess)
       super
