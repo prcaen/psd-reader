@@ -3,6 +3,8 @@ require "psd/read/types/pascal_string"
 require "psd/read/sections/header"
 require "psd/read/sections/color_mode_data"
 require "psd/read/sections/image_resources"
+require "psd/read/sections/layer_and_mask_information"
+require "psd/read/sections/image_data"
 
 module Psd
   class Reader
@@ -26,14 +28,22 @@ module Psd
       @stream.seek(Psd::Read::Sections::Header::LENGTH_TOTAL)
 
       # Color mode data
-      @color_mode_data = Psd::Read::Sections::ColorModeData.new(@stream, @header.color_mode)
+      @color_mode_data = Psd::Read::Sections::ColorModeData.new(@stream, color_mode(false))
       @color_mode_data.skip
 
       # Image resources
-      @image_resources = Psd::Read::Sections::ImageResources.new(@stream, @header.color_mode)
+      @image_resources = Psd::Read::Sections::ImageResources.new(@stream, color_mode(false))
       @image_resources.skip
 
-      @parsed = true
+      # Layer and Mask Information
+      @layer_and_mask_information = Psd::Read::Sections::LayerAndMaskInformation.new(@stream, color_mode(false))
+      @layer_and_mask_information.parse
+
+      # Image Data
+      @image_data = Psd::Read::Sections::ImageData.new(@stream, color_mode(false))
+      @image_data.parse
+
+      @parsed   = true
       end_parse = Time.now
       Psd::LOG.debug("File parsed in: #{Psd::Read::Tools::format_time_diff(start_parse, end_parse)}")
       Psd::LOG.info("#### END READ FILE: #{@filename} ####")
@@ -41,7 +51,7 @@ module Psd
     end
 
     def to_s
-      "Filename: #{@filename}, channels: #{@header.channels}, width: #{width(true)}, height: #{height(true)}, depth: #{depth(true)}, color mode: #{color_mode}, resources length: #{resources_length(true)}, size: #{Psd::Read::Tools.format_size(File.size(@file_path))}, created at: #{File.ctime(@file_path)}, updated at: #{File.mtime(@file_path)}, path: #{File.dirname(@file_path)}"
+      "Filename: #{@filename}, channels: #{channels}, width: #{width(true)}, height: #{height(true)}, depth: #{depth(true)}, color mode: #{color_mode}, resources length: #{resources_length(true)}, size: #{Psd::Read::Tools.format_size(File.size(@file_path))}, created at: #{File.ctime(@file_path)}, updated at: #{File.mtime(@file_path)}, path: #{File.dirname(@file_path)}"
     end
 
     def parsed?
