@@ -36,7 +36,7 @@ module Psd
       @image_resources.skip
 
       # Layer and Mask Information
-      @layer_and_mask_information = Psd::Read::Sections::LayerAndMaskInformation.new(@stream, color_mode(false))
+      @layer_and_mask_information = Psd::Read::Sections::LayerAndMaskInformation.new(@stream, @header)
       @layer_and_mask_information.parse
 
       # Image Data
@@ -106,6 +106,14 @@ module Psd
       else
         @header.width
       end
+    end
+
+    def version_psd?
+      @header.version == Psd::Read::Sections::Header::VERSION_PSD
+    end
+
+    def version_psb?
+      @header.version == Psd::Read::Sections::Header::VERSION_PSB
     end
   end
 end

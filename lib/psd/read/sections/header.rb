@@ -16,7 +16,7 @@ module Psd
 
         SUPPORTED_DEPTH = [1,8,16,32]
 
-        attr_reader :channels, :color_mode, :depth, :height, :width
+        attr_reader :channels, :color_mode, :depth, :height, :version, :width
 
         def initialize(stream)
           Psd::LOG.info("### HEADER ###")
@@ -29,8 +29,8 @@ module Psd
             raise Psd::SignatureMismatch.new("PSD/PSB signature mismatch")
           end
 
-          version = BinData::Uint16be.read(@stream).value
-          unless version == VERSION_PSD || version == VERSION_PSB
+          @version = BinData::Uint16be.read(@stream).value
+          unless @version == VERSION_PSD || @version == VERSION_PSB
             raise Psd::VersionMismatch.new("PSD/PSB version mismatch")
           end
 
