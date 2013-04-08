@@ -58,8 +58,13 @@ module Psd
 
           parse_infos
           parse_blend_mode
-          parse_layer_mask_adjustment_layer_data
-          parse_layer_blending_ranges_data
+
+          extra_length = BinData::Uint32be.read(@stream).value
+
+          if extra_length > 0
+            parse_layer_mask_adjustment_layer_data
+            parse_layer_blending_ranges_data
+          end
         end
 
         def parse_infos
@@ -112,12 +117,17 @@ module Psd
           @blending_mode[:opacity]  = BinData::Uint8be.read(@stream).value
           @blending_mode[:clipping] = BinData::Uint8be.read(@stream).value
 
-          flags  = BinData::Uint8be.read(@stream).value
-
           @blending_mode[:transparency_protected] =  BinData::Bit1.read(@stream).value
           @blending_mode[:visible]                = !BinData::Bit1.read(@stream).value
           @blending_mode[:obsolete]               =  BinData::Bit1.read(@stream).value
-          @blending_mode[:pixel_data_irrelevant]  =  BinData::Bit1.read(@stream).value if BinData::Bit1.read(@stream).value > 0
+
+          if BinData::Bit1.read(@stream).value > 0
+            @blending_mode[:pixel_data_irrelevant] = BinData::Bit1.read(@stream).value
+          else
+            BinData::Bit1.read(@stream).value
+          end
+
+          BinData::Skip.new(length: (1/2)).read(@stream)
 
           filler = BinData::Uint8be.read(@stream).value
 
@@ -126,7 +136,37 @@ module Psd
 
           Psd::LOG.debug("Blending mode: #{@blending_mode}")
         end
+
         def parse_layer_mask_adjustment_layer_data
+          data_size = BinData::Uint32be.read(@stream).value
+
+          if data_size > 0
+            @mask[:top]    = BinData::Int32be.read(@stream).value
+            @mask[:left]   = BinData::Int32be.read(@stream).value
+            @mask[:bottom] = BinData::Int32be.read(@stream).value
+            @mask[:right]  = BinData::Int32be.read(@stream).value
+
+            @mask[:default_color] = BinData::Uint8be.read(@stream).value
+
+            @mask[:relative_position] = BinData::Bit1.read(@stream).value
+            @mask[:disabled]          = BinData::Bit1.read(@stream).value
+            @mask[:invert]            = BinData::Bit1.read(@stream).value
+            BinData::Skip.new(length: (5/8)).read(@stream)
+
+            if @mask[:data_size] === 20
+              BinData::Skip.new(length: 2).read(@stream)
+            else
+              @mask[:relative_position] = BinData::Bit1.read(@stream).value
+              @mask[:disabled]          = BinData::Bit1.read(@stream).value
+              @mask[:invert]            = BinData::Bit1.read(@stream).value
+              BinData::Skip.new(length: (5/8)).read(@stream)
+
+              BinData::Skip.new(length: 1).read(@stream)
+              BinData::Skip.new(length: 16).read(@stream)
+            end
+
+            Psd::LOG.debug("Mask: #{@mask}")
+          end
         end
 
         def parse_layer_blending_ranges_data
