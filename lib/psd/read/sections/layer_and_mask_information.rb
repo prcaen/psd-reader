@@ -4,6 +4,8 @@ module Psd
   module Read
     module Sections
       class LayerAndMaskInformation
+        attr_reader :layers, :merged_alpha
+
         def initialize(stream, header)
           @stream     = stream
           @header     = header
@@ -23,7 +25,11 @@ module Psd
           Psd::LOG.debug("Layer mask size: #{Psd::Read::Tools.format_size(mask_size)}")
           return if mask_size <= 0
 
-          Psd::Read::Blocks::LayerInfo.new(@stream, @header).parse
+          layer_info = Psd::Read::Blocks::LayerInfo.new(@stream, @header)
+          layer_info.parse
+
+          @layers       = layer_info.layers
+          @merged_alpha = layer_info.merged_alpha
         end
       end
     end
