@@ -22,7 +22,7 @@ module Psd
 
           start = @stream.pos
 
-          while n > 0
+          while n > 0 do
             pos = @stream.pos
             image_resource = Psd::Read::Blocks::ImageResource.new(@stream, @color_mode)
             image_resource.parse

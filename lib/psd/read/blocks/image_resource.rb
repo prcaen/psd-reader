@@ -181,7 +181,7 @@ module Psd
 
               results = []
 
-              while @stream.tell < start + @size
+              while @stream.tell < start + @size do
                 info = BinData::Uint16be.read(@stream).value
                 results.push(info)
               end
@@ -284,7 +284,7 @@ module Psd
 
               i = 0
 
-              while i <= count
+              while i <= count do
                 block = {
                   size: BinData::Uint32be.read(@stream).value,
                   key: @stream.read(4)

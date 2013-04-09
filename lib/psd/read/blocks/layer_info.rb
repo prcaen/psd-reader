@@ -40,7 +40,7 @@ module Psd
             Psd::LOG.debug("Found #{layer_count} layer(s)")
 
             i = 0
-            while i < layer_count
+            while i < layer_count do
               layer = Psd::Read::Objects::Layer.new(@stream, @header, i)
               layer.parse
               @layers.push(layer)
