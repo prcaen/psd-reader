@@ -16,11 +16,8 @@ module Psd
         end
 
         def parse
-          if @header.version == VERSION_PSD
-            layer_info_size = Psd::Read::Tools.padding_2(BinData::Int32be.read(@stream).value)
-          else
-            layer_info_size = Psd::Read::Tools.padding_2(BinData::Int64be.read(@stream).value)
-          end
+          layer_info_size = Psd::Read::Tools.padding_2(BinData::Int32be.read(@stream).value) if @header.version == VERSION_PSD
+          layer_info_size = Psd::Read::Tools.padding_2(BinData::Int64be.read(@stream).value) if @header.version == VERSION_PSB
 
           pos = @stream.pos
 

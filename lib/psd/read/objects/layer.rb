@@ -197,7 +197,7 @@ module Psd
         def parse_extra_data
           while @stream.tell < @layer_end do
             signature = BinData::String.new(read_length: LENGTH_SIGNATURE).read(@stream).value
-            if signature != SIGNATURE_EXTRA_DATA_FIRST && signature != SIGNATURE_EXTRA_DATA_LAST
+            unless signature == SIGNATURE_EXTRA_DATA_FIRST || signature == SIGNATURE_EXTRA_DATA_LAST
               raise Psd::SignatureMismatch.new("Layer extra data signature error")
             end
 
