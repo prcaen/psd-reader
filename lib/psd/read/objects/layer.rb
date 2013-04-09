@@ -5,6 +5,8 @@ module Psd
         attr_reader :mask, :blending_ranges, :adjustments, :layer_type, :blending_mode, :opacity, :visible
         attr_reader :width, :height, :top, :left, :right, :bottom, :channels, :channels_info, :name
 
+        attr_accessor :image
+
         def initialize(stream, header, layer_index)
           @stream      = stream
           @header      = header
@@ -21,7 +23,7 @@ module Psd
           @opacity       = 255
 
           @folder        = false
-          @hidden        = false
+          @visible       = true
           @bounding      = false
         end
 
@@ -42,6 +44,24 @@ module Psd
           parse_layer_name
           parse_extra_data
         end
+
+        def bounding?
+          @bounding
+        end
+
+        def folder?
+          @folder
+        end
+
+        def hidden?
+          !@visible
+        end
+
+        def visible?
+          @visible
+        end
+
+        private
 
         def parse_infos
           @top      = BinData::Int32be.read(@stream).value
@@ -206,8 +226,32 @@ module Psd
             pos    = @stream.tell
 
             Psd::LOG.debug("Layer: #{@name} extra key: #{key}, length: #{length}")
-            Psd::LOG.warn("not implemented - skip")
-            BinData::Skip.new(length: length).read(@stream)
+
+            case key
+            when "lsct"
+              read_section_divider(length)
+            else
+              BinData::Skip.new(length: length).read(@stream)
+              Psd::LOG.warn("not implemented - skip")
+            end
+          end
+        end
+
+        def read_section_divider(length)
+          type = BinData::Int32be.read(@stream).value
+
+          BinData::Skip.new(length: 8).read(@stream) if length === 12
+
+          @layer_type = SECTION_DIVIDER_TYPES[type]
+          Psd::LOG.debug("Layer type: #{@layer_type}")
+
+          case type
+          when 1
+            @folder = true
+          when 2
+            @folder = true
+          when 3
+            @bounding = true
           end
         end
       end
