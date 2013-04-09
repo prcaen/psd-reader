@@ -2,8 +2,9 @@ module Psd
   module Read
     module Objects
       class Layer
-        LENGTH_SIGNATURE     = 4
-        BLEND_MODE_SIGNATURE = "8BIM"
+        LENGTH_SIGNATURE       = 4
+        BLEND_MODE_SIGNATURE   = "8BIM"
+        BLEND_MODE_SIGNATURE_2 = "8B64"
 
         CHANNEL_SUFFIXES = {
           -3 => "real layer mask",
@@ -29,6 +30,32 @@ module Psd
           3 => "bounding"
         }
 
+        BLEND_MODES = {
+          "norm" => "normal",
+          "dark" => "darken",
+          "lite" => "lighten",
+          "hue"  => "hue",
+          "sat"  => "saturation",
+          "colr" => "color",
+          "lum"  => "luminosity",
+          "mul"  => "multiply",
+          "scrn" => "screen",
+          "diss" => "dissolve",
+          "over" => "overlay",
+          "hLit" => "hard light",
+          "sLit" => "soft light",
+          "diff" => "difference",
+          "smud" => "exclusion",
+          "div"  => "color dodge",
+          "idiv" => "color burn",
+          "lbrn" => "linear burn",
+          "lddg" => "linear dodge",
+          "vLit" => "vivid light",
+          "lLit" => "linear light",
+          "pLit" => "pin light",
+          "hMix" => "hard mix"
+        }
+
         attr_reader :mask, :blending_ranges, :adjustments, :layer_type, :blending_mode, :opacity, :visible
         attr_reader :width, :height, :top, :left, :right, :bottom, :channels, :channels_info, :name
 
@@ -39,10 +66,10 @@ module Psd
 
           @image = nil
 
-          @adjustements   = {}
-          @blending_mode  = {}
-          @blending_range = {}
-          @mask           = {}
+          @adjustements    = {}
+          @blending_mode   = {}
+          @blending_ranges = {}
+          @mask            = {}
 
           @layer_type    = "normal"
           @opacity       = 255
@@ -59,12 +86,15 @@ module Psd
           parse_infos
           parse_blend_mode
 
-          extra_length = BinData::Uint32be.read(@stream).value
+          extra_length = BinData::Int32be.read(@stream).value
+          raise "Extra length nil" unless extra_length > 0
 
-          if extra_length > 0
-            parse_layer_mask_adjustment_layer_data
-            parse_layer_blending_ranges_data
-          end
+          @layer_end = @stream.tell + extra_length
+
+          parse_layer_mask_adjustment_layer_data
+          parse_layer_blending_ranges_data
+          parse_layer_name
+          parse_extra_data
         end
 
         def parse_infos
@@ -90,7 +120,7 @@ module Psd
           @channels_info = {}
 
           i = 0
-          while i < @channels
+          while i < @channels do
             id     = BinData::Int16be.read(@stream).value
             length = BinData::Int32be.read(@stream).value if @header.version == Psd::Read::Sections::Header::VERSION_PSD
             length = BinData::Int64be.read(@stream).value if @header.version == Psd::Read::Sections::Header::VERSION_PSB
@@ -117,21 +147,20 @@ module Psd
           @blending_mode[:opacity]  = BinData::Uint8be.read(@stream).value
           @blending_mode[:clipping] = BinData::Uint8be.read(@stream).value
 
-          @blending_mode[:transparency_protected] =  BinData::Bit1.read(@stream).value
-          @blending_mode[:visible]                = !BinData::Bit1.read(@stream).value
-          @blending_mode[:obsolete]               =  BinData::Bit1.read(@stream).value
+          flags  = BinData::Uint8be.read(@stream)
+          filler = BinData::Uint8be.read(@stream)
 
-          if BinData::Bit1.read(@stream).value > 0
-            @blending_mode[:pixel_data_irrelevant] = BinData::Bit1.read(@stream).value
-          else
-            BinData::Bit1.read(@stream).value
+          @blending_mode[:transparency_protected] = !(flags & 0x01)
+          @blending_mode[:visible]                = !((flags & (0x01 << 1)) > 0)
+          @blending_mode[:obsolete]               = (flags & (0x01 << 2)) > 0
+
+          if (flags & (0x01 << 3)) > 0
+            @blending_mode[:pixel_data_irrelevant] = (flags & (0x01 << 4)) > 0
           end
 
-          BinData::Skip.new(length: (1/2)).read(@stream)
+          @blending_mode[:blender] = BLEND_MODES[@blending_mode[:key]]
 
-          filler = BinData::Uint8be.read(@stream).value
-
-          @opacity = @blending_mode[:opacity]
+          @opacity = @blending_mode[:opacity] * 100 / 255
           @visible = @blending_mode[:visible]
 
           Psd::LOG.debug("Blending mode: #{@blending_mode}")
@@ -148,20 +177,22 @@ module Psd
 
             @mask[:default_color] = BinData::Uint8be.read(@stream).value
 
-            @mask[:relative_position] = BinData::Bit1.read(@stream).value
-            @mask[:disabled]          = BinData::Bit1.read(@stream).value
-            @mask[:invert]            = BinData::Bit1.read(@stream).value
-            BinData::Skip.new(length: (5/8)).read(@stream)
+            flags = BinData::Uint8be.read(@stream).value
+
+            @mask[:relative_position] = flags & 0x01
+            @mask[:disabled]          = (flags & (0x01 << 1)) > 0
+            @mask[:invert]            = (flags & (0x01 << 2)) > 0
 
             if @mask[:data_size] === 20
               BinData::Skip.new(length: 2).read(@stream)
             else
-              @mask[:relative_position] = BinData::Bit1.read(@stream).value
-              @mask[:disabled]          = BinData::Bit1.read(@stream).value
-              @mask[:invert]            = BinData::Bit1.read(@stream).value
-              BinData::Skip.new(length: (5/8)).read(@stream)
+              real_flags           = BinData::Uint8be.read(@stream)
+              real_user_mask_bckgd = BinData::Uint8be.read(@stream)
 
-              BinData::Skip.new(length: 1).read(@stream)
+              @mask[:relative_position] = real_flags & 0x01
+              @mask[:disabled]          = (real_flags & (0x01 << 1)) > 0
+              @mask[:invert]            = (flags & (0x01 << 2)) > 0
+
               BinData::Skip.new(length: 16).read(@stream)
             end
 
@@ -170,6 +201,68 @@ module Psd
         end
 
         def parse_layer_blending_ranges_data
+          length = BinData::Int32be.read(@stream).value
+
+          @blending_ranges[:grey] = {
+            source: {
+              black: BinData::Int16be.read(@stream).value,
+              white: BinData::Int16be.read(@stream).value
+            },
+            dest: {
+              black: BinData::Int16be.read(@stream).value,
+              white: BinData::Int16be.read(@stream).value
+            }
+          }
+
+          pos = @stream.tell
+
+          @blending_ranges[:channels_count] = (length - 8) / 8
+          raise "Channels cannot be empty" unless @blending_ranges[:channels_count] > 0
+
+          @blending_ranges[:channels] = {}
+
+          i = 0
+          while i < @blending_ranges[:channels_count] do
+            @blending_ranges[:channels][i] = {
+              source: {
+                black: BinData::Int16be.read(@stream).value,
+                white: BinData::Int16be.read(@stream).value
+              },
+              dest: {
+                black: BinData::Int16be.read(@stream).value,
+                white: BinData::Int16be.read(@stream).value
+              }
+            }
+
+            i += 1
+          end
+
+          Psd::LOG.debug("Blending ranges: #{@blending_ranges}")
+        end
+
+        def parse_layer_name
+          length = Psd::Read::Tools.padding_4(BinData::Uint8be.read(@stream).value)
+          @name = BinData::String.new(read_length: length).read(@stream).value
+          @name.encode!("UTF-8", invalid: :replace, undef: :replace, replace: "?")
+
+          Psd::LOG.debug("Name: #{@name}")
+        end
+
+        def parse_extra_data
+          while @stream.tell < @layer_end do
+            signature = BinData::String.new(read_length: LENGTH_SIGNATURE).read(@stream).value
+            if signature != BLEND_MODE_SIGNATURE && signature != BLEND_MODE_SIGNATURE_2
+              raise Psd::SignatureMismatch.new("Layer extra data signature error")
+            end
+
+            key    = BinData::String.new(read_length: 4).read(@stream).value
+            length = Psd::Read::Tools.padding_2(BinData::Uint32be.read(@stream).value)
+            pos    = @stream.tell
+
+            Psd::LOG.debug("Layer: #{@name} extra key: #{key}, length: #{length}")
+            Psd::LOG.warn("not implemented - skip")
+            BinData::Skip.new(length: length).read(@stream)
+          end
         end
       end
     end

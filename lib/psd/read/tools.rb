@@ -5,6 +5,10 @@ module Psd
         (i + 1).floor / 2 * 2;
       end
 
+      def self.padding_4(i)
+        i - (i % 4) + 3
+      end
+
       def self.format_size(s)
         units = %W(B KiB MiB GiB TiB)
 
