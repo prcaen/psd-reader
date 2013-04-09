@@ -25,7 +25,7 @@ module Psd
 
     def parse
       start_parse = Time.now
-      @stream.seek(Psd::Read::Sections::Header::LENGTH_TOTAL)
+      @stream.seek(LENGTH_HEADER_TOTAL)
 
       # Color mode data
       @color_mode_data = Psd::Read::Sections::ColorModeData.new(@stream, color_mode(false))
@@ -109,11 +109,11 @@ module Psd
     end
 
     def version_psd?
-      @header.version == Psd::Read::Sections::Header::VERSION_PSD
+      @header.version == VERSION_PSD
     end
 
     def version_psb?
-      @header.version == Psd::Read::Sections::Header::VERSION_PSB
+      @header.version == VERSION_PSB
     end
   end
 end

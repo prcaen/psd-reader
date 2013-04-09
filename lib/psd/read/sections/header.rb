@@ -2,20 +2,6 @@ module Psd
   module Read
     module Sections
       class Header
-        SIGNATURE   = "8BPS"
-
-        VERSION_PSD = 1
-        VERSION_PSB = 2
-
-        LENGTH_SIGNATURE = 4
-        LENGTH_RESERVED  = 6
-        LENGTH_TOTAL     = 26
-
-        PIXELS_MAX_PSD = 30000
-        PIXELS_MAX_PSB = 300000
-
-        SUPPORTED_DEPTH = [1,8,16,32]
-
         attr_reader :channels, :color_mode, :depth, :height, :version, :width
 
         def initialize(stream)
@@ -25,7 +11,7 @@ module Psd
 
         def parse
           signature = BinData::String.new(read_length: LENGTH_SIGNATURE).read(@stream).value
-          unless signature == SIGNATURE
+          unless signature == SIGNATURE_PSD
             raise Psd::SignatureMismatch.new("PSD/PSB signature mismatch")
           end
 

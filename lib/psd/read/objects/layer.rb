@@ -2,60 +2,6 @@ module Psd
   module Read
     module Objects
       class Layer
-        LENGTH_SIGNATURE       = 4
-        BLEND_MODE_SIGNATURE   = "8BIM"
-        BLEND_MODE_SIGNATURE_2 = "8B64"
-
-        CHANNEL_SUFFIXES = {
-          -3 => "real layer mask",
-          -2 => "layer mask",
-          -1 => "A",
-           0 => "R",
-           1 => "G",
-           2 => "B",
-           3 => "RGB",
-           4 => "CMYK",
-           5 => "HSL",
-           6 => "HSB",
-           9 => "Lab",
-          11 => "RGB",
-          12 => "Lab",
-          13 => "CMYK"
-        }
-
-        SECTION_DIVIDER_TYPES = {
-          0 => "other",
-          1 => "open_folder",
-          2 => "closed_folder",
-          3 => "bounding"
-        }
-
-        BLEND_MODES = {
-          "norm" => "normal",
-          "dark" => "darken",
-          "lite" => "lighten",
-          "hue"  => "hue",
-          "sat"  => "saturation",
-          "colr" => "color",
-          "lum"  => "luminosity",
-          "mul"  => "multiply",
-          "scrn" => "screen",
-          "diss" => "dissolve",
-          "over" => "overlay",
-          "hLit" => "hard light",
-          "sLit" => "soft light",
-          "diff" => "difference",
-          "smud" => "exclusion",
-          "div"  => "color dodge",
-          "idiv" => "color burn",
-          "lbrn" => "linear burn",
-          "lddg" => "linear dodge",
-          "vLit" => "vivid light",
-          "lLit" => "linear light",
-          "pLit" => "pin light",
-          "hMix" => "hard mix"
-        }
-
         attr_reader :mask, :blending_ranges, :adjustments, :layer_type, :blending_mode, :opacity, :visible
         attr_reader :width, :height, :top, :left, :right, :bottom, :channels, :channels_info, :name
 
@@ -122,8 +68,8 @@ module Psd
           i = 0
           while i < @channels do
             id     = BinData::Int16be.read(@stream).value
-            length = BinData::Int32be.read(@stream).value if @header.version == Psd::Read::Sections::Header::VERSION_PSD
-            length = BinData::Int64be.read(@stream).value if @header.version == Psd::Read::Sections::Header::VERSION_PSB
+            length = BinData::Int32be.read(@stream).value if @header.version == VERSION_PSD
+            length = BinData::Int64be.read(@stream).value if @header.version == VERSION_PSB
 
             channel = {
               id: id,
@@ -141,7 +87,7 @@ module Psd
           @blending_mode = {}
 
           signature = BinData::String.new(read_length: LENGTH_SIGNATURE).read(@stream).value
-          raise Psd::SignatureMismatch.new("PSD/PSB signature mismatch") unless signature == BLEND_MODE_SIGNATURE
+          raise Psd::SignatureMismatch.new("PSD/PSB signature mismatch") unless signature == SIGNATURE_BLEND_MODE
 
           @blending_mode[:key]      = BinData::String.new(read_length: 4).read(@stream).value.strip
           @blending_mode[:opacity]  = BinData::Uint8be.read(@stream).value
@@ -251,7 +197,7 @@ module Psd
         def parse_extra_data
           while @stream.tell < @layer_end do
             signature = BinData::String.new(read_length: LENGTH_SIGNATURE).read(@stream).value
-            if signature != BLEND_MODE_SIGNATURE && signature != BLEND_MODE_SIGNATURE_2
+            if signature != SIGNATURE_EXTRA_DATA_FIRST && signature != SIGNATURE_EXTRA_DATA_LAST
               raise Psd::SignatureMismatch.new("Layer extra data signature error")
             end
 

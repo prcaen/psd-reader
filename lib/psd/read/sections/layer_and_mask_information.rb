@@ -19,8 +19,8 @@ module Psd
 
         def parse
           Psd::LOG.info("### LAYERS AND MASK INFORMATION ###")
-          mask_size    = BinData::Uint32be.read(@stream) if @header.version == Psd::Read::Sections::Header::VERSION_PSD
-          mask_size    = BinData::Uint64be.read(@stream) if @header.version == Psd::Read::Sections::Header::VERSION_PSB
+          mask_size    = BinData::Uint32be.read(@stream) if @header.version == VERSION_PSD
+          mask_size    = BinData::Uint64be.read(@stream) if @header.version == VERSION_PSB
           end_location = @stream.tell + mask_size
           Psd::LOG.debug("Layer mask size: #{Psd::Read::Tools.format_size(mask_size)}")
           return if mask_size <= 0

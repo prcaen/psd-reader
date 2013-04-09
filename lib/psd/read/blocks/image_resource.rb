@@ -2,9 +2,6 @@ module Psd
   module Read
     module Blocks
       class ImageResource
-        LENGTH_SIGNATURE = 4
-        SIGNATURE = "8BIM"
-
         attr_reader :id, :description, :data
 
         def initialize(stream, color_mode)
