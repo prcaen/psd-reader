@@ -189,7 +189,7 @@ module Psd
         def parse_layer_name
           length = Psd::Read::Tools.padding_4(BinData::Uint8be.read(@stream).value)
           @name = BinData::String.new(read_length: length).read(@stream).value
-          @name.encode!("UTF-8", invalid: :replace, undef: :replace, replace: "?")
+          @name.encode!("UTF-8", "MacRoman")
 
           Psd::LOG.debug("Name: #{@name}")
         end
