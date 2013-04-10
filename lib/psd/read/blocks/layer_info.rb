@@ -1,4 +1,5 @@
 require "psd/read/objects/layer"
+require "psd/read/objects/layer_image"
 
 module Psd
   module Read
@@ -31,7 +32,7 @@ module Psd
             end
 
             if layer_count * (18 + 6 * @header.channels) > layer_info_size
-              raise "Unlikely number of #{layer_count} layers for #{@header.channels} with #{layer_info_size} layer info size. Giving up."
+              raise Exception.new("Unlikely number of #{layer_count} layers for #{@header.channels} with #{layer_info_size} layer info size. Giving up.")
             end
 
             Psd::LOG.debug("Found #{layer_count} layer(s)")
@@ -43,6 +44,16 @@ module Psd
               @layers.push(layer)
 
               i += 1
+            end
+
+            @layers.each do |layer|
+              if layer.folder? || layer.bounding?
+                Psd::LOG.info("Skip #{layer.name} - #{(layer.folder? ? "folder" : "bounding")}")
+                BinData::Skip.new(length: 8).read(@stream)
+                next
+              end
+
+              layer.image = Psd::Read::Objects::LayerImage.new(@stream, @header, layer).parse
             end
           end
         end

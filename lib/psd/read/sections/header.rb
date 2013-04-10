@@ -22,7 +22,7 @@ module Psd
 
           reserved = BinData::Uint48be.read(@stream).value
           unless reserved == 0
-            raise "Reserved header must be 0"
+            raise Exception.new("Reserved header must be 0")
           end
 
           @channels = BinData::Uint16be.read(@stream).value

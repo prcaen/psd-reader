@@ -74,6 +74,18 @@ module Psd
     15 => "Duotone16"
   }
 
+  COMPRESSIONS = {
+    0 => "RAW",
+    1 => "RLE",
+    2 => "ZIP",
+    3 => "ZIPPrediction"
+  }
+
+  COMPRESSION_RAW_DATA       = 0
+  COMPRESSION_RLE_COMPRESSED = 1
+  COMPRESSION_ZIP            = 2
+  COMPRESSION_ZIP_PREDICTION = 3
+
   LENGTH_HEADER_RESERVED  = 6
   LENGTH_HEADER_TOTAL     = 26
   LENGTH_SIGNATURE        = 4

@@ -35,7 +35,7 @@ module Psd
           parse_blend_mode
 
           extra_length = BinData::Int32be.read(@stream).value
-          raise "Extra length nil" unless extra_length > 0
+          raise Exception.new("Extra length nil") unless extra_length > 0
 
           @layer_end = @stream.tell + extra_length
 
@@ -183,7 +183,7 @@ module Psd
           pos = @stream.tell
 
           @blending_ranges[:channels_count] = (length - 8) / 8
-          raise "Channels cannot be empty" unless @blending_ranges[:channels_count] > 0
+          raise Exception.new("Channels cannot be empty") unless @blending_ranges[:channels_count] > 0
 
           @blending_ranges[:channels] = {}
 
