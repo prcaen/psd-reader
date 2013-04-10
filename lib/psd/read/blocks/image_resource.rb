@@ -12,7 +12,7 @@ module Psd
         def parse
           signature = BinData::String.new(read_length: LENGTH_SIGNATURE).read(@stream).value
           unless signature == SIGNATURE
-            raise Psd::SignatureMismatch.new("PSD/PSB signature mismatch")
+            raise SignatureMismatch.new("PSD/PSB signature mismatch")
           end
 
           @id       = BinData::Uint16be.read(@stream).value

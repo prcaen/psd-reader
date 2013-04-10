@@ -9,7 +9,7 @@ require "psd/read/sections/image_data"
 module Psd
   class Reader
     def initialize(file_path)
-      raise Psd::ENOENT.new("#{file_path}") unless File.exist?(file_path)
+      raise ENOENT.new("#{file_path}") unless File.exist?(file_path)
 
       @file_path = file_path
       @filename  = File.basename(file_path)
@@ -87,7 +87,7 @@ module Psd
     end
 
     def resources
-      raise Psd::UnParsedException.new("Image resources are not parsed") unless @image_resources.parsed?
+      raise UnParsedException.new("Image resources are not parsed") unless @image_resources.parsed?
       @image_resources.resources
     end
 

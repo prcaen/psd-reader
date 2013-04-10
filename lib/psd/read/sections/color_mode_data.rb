@@ -17,7 +17,7 @@ module Psd
             Psd::LOG.warn("Not implemented for the moment")
             BinData::Skip.new(length: @length).read(@stream)
           else
-            raise Psd::LengthException.new("Color mode data length error") unless @length == 0
+            raise LengthException.new("Color mode data length error") unless @length == 0
           end
 
           parsed = true

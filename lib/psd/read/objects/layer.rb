@@ -107,7 +107,7 @@ module Psd
           @blending_mode = {}
 
           signature = BinData::String.new(read_length: LENGTH_SIGNATURE).read(@stream).value
-          raise Psd::SignatureMismatch.new("PSD/PSB signature mismatch") unless signature == SIGNATURE_BLEND_MODE
+          raise SignatureMismatch.new("PSD/PSB signature mismatch") unless signature == SIGNATURE_BLEND_MODE
 
           @blending_mode[:key]      = BinData::String.new(read_length: 4).read(@stream).value.strip
           @blending_mode[:opacity]  = BinData::Uint8be.read(@stream).value
@@ -218,7 +218,7 @@ module Psd
           while @stream.tell < @layer_end do
             signature = BinData::String.new(read_length: LENGTH_SIGNATURE).read(@stream).value
             unless signature == SIGNATURE_EXTRA_DATA_FIRST || signature == SIGNATURE_EXTRA_DATA_LAST
-              raise Psd::SignatureMismatch.new("Layer extra data signature error")
+              raise SignatureMismatch.new("Layer extra data signature error")
             end
 
             key    = BinData::String.new(read_length: 4).read(@stream).value
