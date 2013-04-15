@@ -10,6 +10,7 @@ module Psd
           @layer  = layer
 
           @channels_info = @layer.channels_info
+          @channels_data = []
           @width         = @layer.width
           @height        = @layer.height
           @pixels_count  = @width * @height
@@ -61,7 +62,7 @@ module Psd
           bytes_count = {}
 
           i = 0
-          while i <= @height
+          while i < @height
             bytes_count[i] = BinData::Int16be.read(@stream).value
 
             i += 1
@@ -115,12 +116,85 @@ module Psd
         end
 
         def parse_raw
+          Psd::LOG.debug("Parse RAW")
         end
 
         def parse_rle
+          Psd::LOG.debug("Parse RLE")
+          @bytes_count = bytes_count
+          Psd::LOG.debug("Read byte counts. Current pos = #{@stream.tell}, Pixels = #{@length}px")
+
+          parse_channel_data
         end
 
         def parse_zip
+          raise "Parse ZIP - Not yet implemented"
+        end
+
+        def parse_channel_data
+          Psd::LOG.debug("Parsing layer channel ##{@channel_info[:id]}, Start = #{@stream.tell}")
+          decode_rle_channel
+        end
+
+        def decode_rle_channel
+          i = 0
+          line_index = 0
+
+          start_time = Time.now
+          while i < @height do
+            byte_count = @bytes_count[line_index]
+            line_index += 1
+
+            start = @stream.tell
+
+            while @stream.tell < start + byte_count do
+              len = BinData::Uint8be.read(@stream).value
+
+              if len < 128
+                len += 1
+                data = @stream.read(len).unpack("C#{len}")
+
+                k = @channel_pos
+                data_index = 0
+
+                ref = k + len
+                while k < ref do
+                  @channels_data[k] = data[data_index].to_i
+                  data_index += 1
+                  k += 1
+                end
+
+                @channel_pos += len
+              elsif len > 128
+                len ^= 0xff
+                len += 2
+
+                val = BinData::Uint8be.read(@stream).value
+                data = {}
+                k = @channel_pos
+                data_index = 0
+                z = 0
+
+                while z < len do
+                  data[z] = val
+                  z += 1
+                end
+
+                ref = k + len
+                while k < ref do
+                  @channels_data[k] = data[data_index]
+                  data_index += 1
+                  k += 1
+                end
+
+                @channel_pos += len
+              end
+            end
+            i += 1
+          end
+          end_time = Time.now
+
+          Psd::LOG.debug("Time decode RLE: #{Psd::Read::Tools.format_time_diff(start_time, end_time)}")
         end
       end
     end
