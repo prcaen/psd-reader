@@ -17,15 +17,15 @@ module Psd
 
           @id       = BinData::Uint16be.read(@stream).value
           @name     = parse_name
-          @size     = Psd::Read::Tools.padding_2(BinData::Int32be.read(@stream).value)
+          @size     = Tools.padding_2(BinData::Int32be.read(@stream).value)
           parse_data
 
-          Psd::LOG.debug("Resource ##{@id}, #{@description}")
+          LOG.debug("Resource ##{@id}, #{@description}")
         end
 
         def parse_name
           length = BinData::Uint8be.read(@stream).value
-          length = Psd::Read::Tools.padding_2(length - 1) + 1
+          length = Tools.padding_2(length - 1) + 1
           BinData::String.new(read_length: length).read(@stream).value
         end
 
@@ -81,7 +81,7 @@ module Psd
           },
           1008 => {
             name: "Caption",
-            parse: lambda { { caption: Psd::Read::Types::PascalString.new.read(@stream) } }
+            parse: lambda { { caption: Types::PascalString.new.read(@stream) } }
           },
           1009 => {
             name: "Border information",
@@ -268,7 +268,7 @@ module Psd
           },
           1051 => {
             name: "Workflow URL",
-            parse: lambda { { workflow_url: Psd::Read::Types::PascalString.new.read(@stream) } }
+            parse: lambda { { workflow_url: Types::PascalString.new.read(@stream) } }
           },
           1052 => {
             name: "Jump To XPEP",

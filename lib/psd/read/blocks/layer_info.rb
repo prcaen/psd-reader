@@ -17,8 +17,8 @@ module Psd
         end
 
         def parse
-          layer_info_size = Psd::Read::Tools.padding_2(BinData::Int32be.read(@stream).value) if @header.version == VERSION_PSD
-          layer_info_size = Psd::Read::Tools.padding_2(BinData::Int64be.read(@stream).value) if @header.version == VERSION_PSB
+          layer_info_size = Tools.padding_2(BinData::Int32be.read(@stream).value) if @header.version == VERSION_PSD
+          layer_info_size = Tools.padding_2(BinData::Int64be.read(@stream).value) if @header.version == VERSION_PSB
 
           pos = @stream.pos
 
@@ -26,7 +26,7 @@ module Psd
             layer_count = BinData::Uint16be.read(@stream).value
 
             if layer_count < 0
-              Psd::LOG.debug("First alpha channel contains transparency data")
+              LOG.debug("First alpha channel contains transparency data")
               layer_count  = layer_count.abs
               @merged_alpha = true
             end
@@ -35,11 +35,11 @@ module Psd
               raise Exception.new("Unlikely number of #{layer_count} layers for #{@header.channels} with #{layer_info_size} layer info size. Giving up.")
             end
 
-            Psd::LOG.debug("Found #{layer_count} layer(s)")
+            LOG.debug("Found #{layer_count} layer(s)")
 
             i = 0
             while i < layer_count do
-              layer = Psd::Read::Objects::Layer.new(@stream, @header, i)
+              layer = Objects::Layer.new(@stream, @header, i)
               layer.parse
               @layers.push(layer)
 
@@ -48,12 +48,12 @@ module Psd
 
             @layers.each do |layer|
               if layer.folder? || layer.bounding?
-                Psd::LOG.info("Skip #{layer.name} - #{(layer.folder? ? "folder" : "bounding")}")
+                LOG.info("Skip #{layer.name} - #{(layer.folder? ? "folder" : "bounding")}")
                 BinData::Skip.new(length: 8).read(@stream)
                 next
               end
 
-              layer.image = Psd::Read::Objects::LayerImage.new(@stream, @header, layer).parse
+              layer.image = Objects::LayerImage.new(@stream, @header, layer).parse
             end
           end
         end

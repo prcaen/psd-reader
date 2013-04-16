@@ -22,7 +22,7 @@ module Psd
         end
 
         def parse
-          Psd::LOG.info("Parsing layer - #{@layer.name}")
+          LOG.info("Parsing layer - #{@layer.name}")
 
           @channel_pos = 0
           i = 0
@@ -43,7 +43,7 @@ module Psd
               @height = @layer.height
             end
 
-            Psd::LOG.debug("Channel ##{@channel_info[:id]}: length = #{@channel_info[:length]}")
+            LOG.debug("Channel ##{@channel_info[:id]}: length = #{@channel_info[:length]}")
 
             before_parse = @stream.tell
             parse_image_data
@@ -112,7 +112,7 @@ module Psd
           when COMPRESSION_ZIP_PREDICTION
             parse_zip
           else
-            Psd::LOG.warn("Unknown image compression. Attempting to skip.")
+            LOG.warn("Unknown image compression. Attempting to skip.")
             BinData::Skip.new(length: @end).read(@stream)
           end
 
@@ -120,13 +120,13 @@ module Psd
         end
 
         def parse_raw
-          Psd::LOG.debug("Parse RAW")
+          LOG.debug("Parse RAW")
         end
 
         def parse_rle
-          Psd::LOG.debug("Parse RLE")
+          LOG.debug("Parse RLE")
           @bytes_count = bytes_count
-          Psd::LOG.debug("Read byte counts. Current pos = #{@stream.tell}, Pixels = #{@length}px")
+          LOG.debug("Read byte counts. Current pos = #{@stream.tell}, Pixels = #{@length}px")
 
           parse_channel_data
         end
@@ -136,7 +136,7 @@ module Psd
         end
 
         def parse_channel_data
-          Psd::LOG.debug("Parsing layer channel ##{@channel_info[:id]}, Start = #{@stream.tell}")
+          LOG.debug("Parsing layer channel ##{@channel_info[:id]}, Start = #{@stream.tell}")
           decode_rle_channel
         end
 
@@ -198,7 +198,7 @@ module Psd
           end
           end_time = Time.now
 
-          Psd::LOG.debug("Time decode RLE: #{Psd::Read::Tools.format_time_diff(start_time, end_time)}")
+          LOG.debug("Time decode RLE: #{Tools.format_time_diff(start_time, end_time)}")
         end
 
         def process_image_data
@@ -219,7 +219,7 @@ module Psd
             end
 
             end_time = Time.now
-            Psd::LOG.debug("Time combine colors: #{Psd::Read::Tools.format_time_diff(start_time, end_time)}")
+            LOG.debug("Time combine colors: #{Tools.format_time_diff(start_time, end_time)}")
           end
         end
 
@@ -256,24 +256,24 @@ module Psd
             end
 
           elsif depth === 16
-            Psd::LOG.warn("Combine rgb 16 - Not yet implemented")
+            LOG.warn("Combine rgb 16 - Not yet implemented")
           end
         end
 
         def combine_grayscale_channels(depth)
-          Psd::LOG.warn("Combine grayscale - Not yet implemented")
+          LOG.warn("Combine grayscale - Not yet implemented")
         end
 
         def combine_cmyk_channels(depth)
-          Psd::LOG.warn("Combine CMYK - Not yet implemented")
+          LOG.warn("Combine CMYK - Not yet implemented")
         end
 
         def combine_multichannel_channels(depth)
-          Psd::LOG.warn("Combine multichannel - Not yet implemented")
+          LOG.warn("Combine multichannel - Not yet implemented")
         end
 
         def combine_lab_channels(depth)
-          Psd::LOG.warn("Combine lab - Not yet implemented")
+          LOG.warn("Combine lab - Not yet implemented")
         end
 
         def get_pixel_color(i, index)

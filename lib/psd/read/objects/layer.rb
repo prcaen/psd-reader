@@ -29,7 +29,7 @@ module Psd
 
         def parse
           return if @layer_index == nil
-          Psd::LOG.info("Parsing layer #{@layer_index}")
+          LOG.info("Parsing layer #{@layer_index}")
 
           parse_infos
           parse_blend_mode
@@ -73,11 +73,11 @@ module Psd
           @width  = @right - @left
           @height = @bottom - @top
 
-          Psd::LOG.debug("Coordinates - top: #{@top}, bottom: #{@bottom}, left: #{@left}, right: #{@right}, channels: #{@channels}")
-          Psd::LOG.debug("Dimensions  - width: #{@width}px, height: #{@height}px")
+          LOG.debug("Coordinates - top: #{@top}, bottom: #{@bottom}, left: #{@left}, right: #{@right}, channels: #{@channels}")
+          LOG.debug("Dimensions  - width: #{@width}px, height: #{@height}px")
 
           if @bottom < @top || @right < @left || @channels > 64
-            Psd::LOG.error("Somethings not right, skip")
+            LOG.error("Somethings not right, skip")
             @stream.seek(6 * @channels + 12)
 
             return
@@ -96,7 +96,7 @@ module Psd
               length: length
             }
 
-            Psd::LOG.debug("Channel #{i}: id = #{id}, bytes = #{length}, type = #{CHANNEL_SUFFIXES[id]}")
+            LOG.debug("Channel #{i}: id = #{id}, bytes = #{length}, type = #{CHANNEL_SUFFIXES[id]}")
             @channels_info[i] = channel
 
             i += 1
@@ -129,7 +129,7 @@ module Psd
           @opacity = @blending_mode[:opacity] * 100 / 255
           @visible = @blending_mode[:visible]
 
-          Psd::LOG.debug("Blending mode: #{@blending_mode}")
+          LOG.debug("Blending mode: #{@blending_mode}")
         end
 
         def parse_layer_mask_adjustment_layer_data
@@ -162,7 +162,7 @@ module Psd
               BinData::Skip.new(length: 16).read(@stream)
             end
 
-            Psd::LOG.debug("Mask: #{@mask}")
+            LOG.debug("Mask: #{@mask}")
           end
         end
 
@@ -203,15 +203,15 @@ module Psd
             i += 1
           end
 
-          Psd::LOG.debug("Blending ranges: #{@blending_ranges}")
+          LOG.debug("Blending ranges: #{@blending_ranges}")
         end
 
         def parse_layer_name
-          length = Psd::Read::Tools.padding_4(BinData::Uint8be.read(@stream).value)
+          length = Tools.padding_4(BinData::Uint8be.read(@stream).value)
           @name = BinData::String.new(read_length: length).read(@stream).value
           @name.encode!("UTF-8", "MacRoman")
 
-          Psd::LOG.debug("Name: #{@name}")
+          LOG.debug("Name: #{@name}")
         end
 
         def parse_extra_data
@@ -222,17 +222,17 @@ module Psd
             end
 
             key    = BinData::String.new(read_length: 4).read(@stream).value
-            length = Psd::Read::Tools.padding_2(BinData::Uint32be.read(@stream).value)
+            length = Tools.padding_2(BinData::Uint32be.read(@stream).value)
             pos    = @stream.tell
 
-            Psd::LOG.debug("Layer: #{@name} extra key: #{key}, length: #{length}")
+            LOG.debug("Layer: #{@name} extra key: #{key}, length: #{length}")
 
             case key
             when "lsct"
               read_section_divider(length)
             else
               BinData::Skip.new(length: length).read(@stream)
-              Psd::LOG.warn("not implemented - skip")
+              LOG.warn("not implemented - skip")
             end
           end
         end
@@ -243,7 +243,7 @@ module Psd
           BinData::Skip.new(length: 8).read(@stream) if length === 12
 
           @layer_type = SECTION_DIVIDER_TYPES[type]
-          Psd::LOG.debug("Layer type: #{@layer_type}")
+          LOG.debug("Layer type: #{@layer_type}")
 
           case type
           when 1

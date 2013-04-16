@@ -14,12 +14,12 @@ module Psd
       @file_path = file_path
       @filename  = File.basename(file_path)
       @parsed    = false
-      Psd::LOG.info("#### READ FILE: #{@filename} ####")
+      LOG.info("#### READ FILE: #{@filename} ####")
 
       @stream = File.open(file_path, "rb")
 
       # Header
-      @header = Psd::Read::Sections::Header.new(@stream)
+      @header = Read::Sections::Header.new(@stream)
       @header.parse
     end
 
@@ -28,30 +28,30 @@ module Psd
       @stream.seek(LENGTH_HEADER_TOTAL)
 
       # Color mode data
-      @color_mode_data = Psd::Read::Sections::ColorModeData.new(@stream, color_mode(false))
+      @color_mode_data = Read::Sections::ColorModeData.new(@stream, color_mode(false))
       @color_mode_data.skip
 
       # Image resources
-      @image_resources = Psd::Read::Sections::ImageResources.new(@stream, color_mode(false))
+      @image_resources = Read::Sections::ImageResources.new(@stream, color_mode(false))
       @image_resources.skip
 
       # Layer and Mask Information
-      @layer_and_mask_information = Psd::Read::Sections::LayerAndMaskInformation.new(@stream, @header)
+      @layer_and_mask_information = Read::Sections::LayerAndMaskInformation.new(@stream, @header)
       @layer_and_mask_information.parse
 
       # Image Data
-      @image_data = Psd::Read::Sections::ImageData.new(@stream, color_mode(false))
+      @image_data = Read::Sections::ImageData.new(@stream, color_mode(false))
       @image_data.parse
 
       @parsed   = true
       end_parse = Time.now
-      Psd::LOG.debug("File parsed in: #{Psd::Read::Tools::format_time_diff(start_parse, end_parse)}")
-      Psd::LOG.info("#### END READ FILE: #{@filename} ####")
-      Psd::LOG.info("Summary => #{self.to_s}")
+      LOG.debug("File parsed in: #{Read::Tools::format_time_diff(start_parse, end_parse)}")
+      LOG.info("#### END READ FILE: #{@filename} ####")
+      LOG.info("Summary => #{self.to_s}")
     end
 
     def to_s
-      "Filename: #{@filename}, channels: #{channels}, width: #{width(true)}, height: #{height(true)}, depth: #{depth(true)}, color mode: #{color_mode}, resources length: #{resources_length(true)}, size: #{Psd::Read::Tools.format_size(File.size(@file_path))}, created at: #{File.ctime(@file_path)}, updated at: #{File.mtime(@file_path)}, path: #{File.dirname(@file_path)}"
+      "Filename: #{@filename}, channels: #{channels}, width: #{width(true)}, height: #{height(true)}, depth: #{depth(true)}, color mode: #{color_mode}, resources length: #{resources_length(true)}, size: #{Read::Tools.format_size(File.size(@file_path))}, created at: #{File.ctime(@file_path)}, updated at: #{File.mtime(@file_path)}, path: #{File.dirname(@file_path)}"
     end
 
     def parsed?

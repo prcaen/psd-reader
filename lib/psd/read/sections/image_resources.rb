@@ -15,8 +15,8 @@ module Psd
         end
 
         def parse
-          Psd::LOG.info("### IMAGE RESOURCES ###")
-          Psd::LOG.debug("Current position: #{Psd::Read::Tools.format_size(@stream.pos)}")
+          LOG.info("### IMAGE RESOURCES ###")
+          LOG.debug("Current position: #{Tools.format_size(@stream.pos)}")
 
           n = @length
 
@@ -24,7 +24,7 @@ module Psd
 
           while n > 0 do
             pos = @stream.pos
-            image_resource = Psd::Read::Blocks::ImageResource.new(@stream, @color_mode)
+            image_resource = Blocks::ImageResource.new(@stream, @color_mode)
             image_resource.parse
 
             @resources.push(image_resource)
@@ -37,7 +37,7 @@ module Psd
         end
 
         def skip
-          Psd::LOG.info("### IMAGE RESOURCES - Skipped ###")
+          LOG.info("### IMAGE RESOURCES - Skipped ###")
           BinData::Skip.new(length: @length).read(@stream)
         end
 

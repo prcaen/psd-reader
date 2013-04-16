@@ -9,8 +9,8 @@ module Psd
         end
 
         def parse
-          Psd::LOG.info("### IMAGE DATA ###")
-          Psd::LOG.warn("not implemented")
+          LOG.info("### IMAGE DATA ###")
+          LOG.warn("not implemented")
         end
       end
     end

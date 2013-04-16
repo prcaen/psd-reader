@@ -5,7 +5,7 @@ module Psd
         attr_reader :channels, :color_mode, :depth, :height, :version, :width
 
         def initialize(stream)
-          Psd::LOG.info("### HEADER ###")
+          LOG.info("### HEADER ###")
           @stream = stream
         end
 
@@ -49,7 +49,7 @@ module Psd
           end
 
           @color_mode = BinData::Uint16be.read(@stream).value
-          unless Psd::COLOR_MODE.include? @color_mode
+          unless COLOR_MODE.include? @color_mode
             raise ColorModeNotSupported("Color mode #{@color_mode} is not supported.")
           end
         end

@@ -10,11 +10,11 @@ module Psd
         end
 
         def parse
-          Psd::LOG.info("### COLOR MODE DATA ###")
-          Psd::LOG.debug("Current position: #{Psd::Read::Tools.format_size(@stream.pos)}")
+          LOG.info("### COLOR MODE DATA ###")
+          LOG.debug("Current position: #{Tools.format_size(@stream.pos)}")
 
-          if @color_mode == Psd::COLOR_INDEXED || @color_mode == Psd::COLOR_DUOTONE
-            Psd::LOG.warn("Not implemented for the moment")
+          if @color_mode == COLOR_INDEXED || @color_mode == COLOR_DUOTONE
+            LOG.warn("Not implemented for the moment")
             BinData::Skip.new(length: @length).read(@stream)
           else
             raise LengthException.new("Color mode data length error") unless @length == 0
@@ -24,7 +24,7 @@ module Psd
         end
 
         def skip
-          Psd::LOG.info("### COLOR MODE DATA - Skipped ###")
+          LOG.info("### COLOR MODE DATA - Skipped ###")
           BinData::Skip.new(length: @length).read(@stream)
         end
 
