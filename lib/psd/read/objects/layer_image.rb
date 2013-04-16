@@ -13,8 +13,10 @@ module Psd
           @channels_data = []
           @width         = @layer.width
           @height        = @layer.height
+          @number_pixels = @width * @height
           @pixels_count  = @width * @height
           @pixels_count *= 2 if depth == 16
+          @pixels = {}
 
           @length = length
         end
@@ -113,6 +115,8 @@ module Psd
             Psd::LOG.warn("Unknown image compression. Attempting to skip.")
             BinData::Skip.new(length: @end).read(@stream)
           end
+
+          process_image_data
         end
 
         def parse_raw
@@ -195,6 +199,97 @@ module Psd
           end_time = Time.now
 
           Psd::LOG.debug("Time decode RLE: #{Psd::Read::Tools.format_time_diff(start_time, end_time)}")
+        end
+
+        def process_image_data
+          if depth === 8 || depth === 16
+            start_time = Time.now
+
+            case @header.color_mode
+            when COLOR_GRAYSCALE
+              combine_grayscale_channels(depth)
+            when COLOR_RGB
+              combine_rbg_channels(depth)
+            when COLOR_CMYK
+              combine_cmyk_channels(depth)
+            when COLOR_MULTICHANNEL
+              combine_multichannel_channels(depth)
+            when COLOR_LAB
+              combine_lab_channels(depth)
+            end
+
+            end_time = Time.now
+            Psd::LOG.debug("Time combine colors: #{Psd::Read::Tools.format_time_diff(start_time, end_time)}")
+          end
+        end
+
+        def combine_rbg_channels(depth)
+          i = 0
+          ref = @number_pixels
+
+          if depth === 8
+            while i < ref
+              index = 0
+              pixel = { r: 0, g: 0, b: 0, a: 255 }
+
+              @channels_info.each do |key, channel|
+                case channel[:id]
+                when -1
+                  if @layer.channels === 4
+                    pixel[:a] = get_pixel_color(i, index)
+                  else
+                    next
+                  end
+                when 0
+                  pixel[:r] = get_pixel_color(i, index)
+                when 1
+                  pixel[:g] = get_pixel_color(i, index)
+                when 2
+                  pixel[:b] = get_pixel_color(i, index)
+                end
+              end
+
+              pixel[:a] = get_alpha_value(pixel[:a])
+              @pixels[i] = pixel
+
+              i += 1
+            end
+
+          elsif depth === 16
+            Psd::LOG.warn("Combine rgb 16 - Not yet implemented")
+          end
+        end
+
+        def combine_grayscale_channels(depth)
+          Psd::LOG.warn("Combine grayscale - Not yet implemented")
+        end
+
+        def combine_cmyk_channels(depth)
+          Psd::LOG.warn("Combine CMYK - Not yet implemented")
+        end
+
+        def combine_multichannel_channels(depth)
+          Psd::LOG.warn("Combine multichannel - Not yet implemented")
+        end
+
+        def combine_lab_channels(depth)
+          Psd::LOG.warn("Combine lab - Not yet implemented")
+        end
+
+        def get_pixel_color(i, index)
+          @channels_data[i + @channel_length * index]
+        end
+
+        def get_alpha_value(alpha)
+          if alpha == nil
+            alpha = 255
+          end
+
+          if @layer != nil
+            alpha *= @layer.opacity.to_f / 255
+          end
+
+          alpha.to_i
         end
       end
     end
