@@ -28,6 +28,10 @@ module Psd
           "#{diff.round(2)}s"
         end
       end
+
+      def self.to_uint16(b1, b2)
+        (b1 << 8) | b2
+      end
     end
   end
 end

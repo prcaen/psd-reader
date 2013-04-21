@@ -121,6 +121,16 @@ module Psd
 
         def parse_raw
           LOG.debug("Parse RAW")
+          data = BinData::String.new(read_length: @channel_info[:length] - 2).read(@stream).value
+          data_index = 0;
+          i = channel_pos
+          ref = channel_pos + @channel_info[:length] - 2
+
+          while i < ref
+            @channels_data[i] = data[data_index]
+            data_index += 1
+            i += 1
+          end
         end
 
         def parse_rle
@@ -228,7 +238,7 @@ module Psd
           ref = @number_pixels
 
           if depth === 8
-            while i < ref
+            while i < ref do
               index = 0
               pixel = { r: 0, g: 0, b: 0, a: 255 }
 
@@ -247,6 +257,8 @@ module Psd
                 when 2
                   pixel[:b] = get_pixel_color(i, index)
                 end
+
+                index += 1
               end
 
               pixel[:a] = get_alpha_value(pixel[:a])
@@ -254,9 +266,38 @@ module Psd
 
               i += 1
             end
-
           elsif depth === 16
-            LOG.warn("Combine rgb 16 - Not yet implemented")
+            while i < ref do
+              index = 0
+              pixel = { r: 0, g: 0, b: 0, a: 255 }
+
+              @channels_info.each do |key, channel|
+                b1 = @channel_data[i + (@channel_length * index) + 1];
+                b2 = @channel_data[i + (@channel_length * index)];
+
+                case channel[:id]
+                when -1
+                  if @layer.channels === 4
+                    pixel[:a] = Tools::to_uint16(b1, b2)
+                  else
+                    next
+                  end
+                when 0
+                  pixel[:r] = Tools::to_uint16(b1, b2)
+                when 1
+                  pixel[:g] = Tools::to_uint16(b1, b2)
+                when 2
+                  pixel[:b] = Tools::to_uint16(b1, b2)
+                end
+
+                index += 1
+              end
+
+              pixel[:a] = get_alpha_value(pixel[:a])
+              @pixels[i] = pixel
+
+              i += 1
+            end
           end
         end
 
