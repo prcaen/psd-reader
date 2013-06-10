@@ -32,6 +32,10 @@ module Psd
       def self.to_uint16(b1, b2)
         (b1 << 8) | b2
       end
+
+      def self.sanitize_filename(filename)
+       filename.gsub(/[^0-9A-z.\-]/, '_')
+      end
     end
   end
 end

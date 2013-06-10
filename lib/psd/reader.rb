@@ -1,3 +1,5 @@
+require "tempfile"
+
 require "psd/read/tools"
 require "psd/read/types/pascal_string"
 require "psd/read/sections/header"
@@ -48,6 +50,32 @@ module Psd
       LOG.debug("File parsed in: #{Read::Tools::format_time_diff(start_parse, end_parse)}")
       LOG.info("#### END READ FILE: #{@filename} ####")
       LOG.info("Summary => #{self.to_s}")
+    end
+
+    def to_png
+      start_parse = Time.now
+      @stream.seek(LENGTH_HEADER_TOTAL)
+
+      # Color mode data
+      @color_mode_data = Read::Sections::ColorModeData.new(@stream, color_mode(false))
+      @color_mode_data.skip
+
+      # Image resources
+      @image_resources = Read::Sections::ImageResources.new(@stream, color_mode(false))
+      @image_resources.skip
+
+      # Layer and Mask Information
+      @layer_and_mask_information = Read::Sections::LayerAndMaskInformation.new(@stream, @header)
+      @layer_and_mask_information.parse
+
+      @layer_and_mask_information.layers.each do |layer|
+        file_name = Read::Tools.sanitize_filename(layer.name)
+        LOG.debug("layer name: #{file_name}")
+        file = ::Tempfile.new("file_name")
+        LOG.debug("file path #{file.path}")
+        layer.file = layer.image.to_png(file.path)
+        #file.close
+      end
     end
 
     def to_s

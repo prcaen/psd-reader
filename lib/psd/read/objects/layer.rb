@@ -6,6 +6,7 @@ module Psd
         attr_reader :width, :height, :top, :left, :right, :bottom, :channels, :channels_info, :name
 
         attr_accessor :image
+        attr_writer :file
 
         def initialize(stream, header, layer_index)
           @stream      = stream

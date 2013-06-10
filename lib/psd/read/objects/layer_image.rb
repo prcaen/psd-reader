@@ -2,7 +2,7 @@ module Psd
   module Read
     module Objects
       class LayerImage
-        attr_reader :width, :height, :depth, :channels
+        attr_reader :width, :height, :depth, :channels, :pixels
 
         def initialize(stream, header, layer)
           @stream = stream
@@ -56,6 +56,25 @@ module Psd
 
             i += 1
           end
+        end
+
+        def to_png(file_path)
+          puts "Export layer to PNG - name: #{@layer.name}, width: #{width}, height: #{height}"
+          png = ChunkyPNG::Image.new(width, height, ChunkyPNG::Color::TRANSPARENT)
+
+          x = y = i = 0
+          while y < height
+            while x < width
+              pixel = pixels[i]
+              png[x, y] = ChunkyPNG::Color.rgba(pixel[:r], pixel[:g], pixel[:b], pixel[:a])
+              x += 1
+              i += 1
+            end
+            x = 0
+            y += 1
+          end
+
+          png.save(file_path)
         end
 
         private
