@@ -6,6 +6,6 @@ module Psd
     LOG = Rails.logger
   else
     LOG = Logger.new(STDOUT)
-    LOG.level = Logger::DEBUG
+    LOG.level = Logger::WARN
   end
 end

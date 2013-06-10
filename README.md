@@ -1,6 +1,5 @@
 # Psd
-
-TODO: Write a gem description
+This gem can parse a PSD file.
 
 ## Installation
 
@@ -18,12 +17,9 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+### Parse PSD
 
-## Contributing
-
-1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+```ruby
+psd = Psd::Reader.new("file.psd")
+psd.parse
+```
